@@ -6,7 +6,7 @@
     },
     "frame": {
         "version": "1",
-        "name": "Example Frame",
+        "name": "WebglBridge",
         "iconUrl": "https://i.ibb.co/bgPWqJqr/Untitled-design-62.png",
         "homeUrl": "https://webgl-bridge.vercel.app",
         "imageUrl": "https://i.ibb.co/bgPWqJqr/Untitled-design-62.png",

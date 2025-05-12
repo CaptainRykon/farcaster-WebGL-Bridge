@@ -1,38 +1,29 @@
-"use client";
-
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import sdk from "@farcaster/frame-sdk";
+import WalletConnector from "./wallet-connector";
 
 export default function App() {
+  const [farcasterUserContext, setFarcasterUserContext] = useState<any>();
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    const loadContext = async () => {
-      try {
-        const context = await sdk.context;
-        sdk.actions.ready();
+    const load = async () => {
+      const context = await sdk.context;
+      setFarcasterUserContext(context);
+      sdk.actions.ready();
 
-        const user = context.user || {};
-        const userInfo = {
-          username: user.username || "",
-          pfpUrl: user.pfpUrl || "",
-        };
-
-        const iframe = iframeRef.current;
-        if (iframe && iframe.contentWindow) {
-          iframe.onload = () => {
-            iframe.contentWindow?.postMessage(
-              { type: "FARCASTER_USER_INFO", payload: userInfo },
-              "*"
-            );
-          };
+      // Wait for iframe to be ready
+      setTimeout(() => {
+        if (iframeRef.current && context?.user?.username) {
+          iframeRef.current.contentWindow?.postMessage(
+            { type: "farcaster-context", username: context.user.username },
+            "*"
+          );
         }
-      } catch (error) {
-        console.error("Error loading Farcaster context:", error);
-      }
+      }, 1000); // Delay ensures iframe has loaded
     };
 
-    loadContext();
+    load();
   }, []);
 
   return (
@@ -46,4 +37,3 @@ export default function App() {
     </div>
   );
 }
-
