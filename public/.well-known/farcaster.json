@@ -1,0 +1,19 @@
+{
+    {
+        "accountAssociation": {
+            "header": "eyJmaWQiOjEwMTgzOTIsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhFZDg3YkE2MjNDMzRkMkYxYzkzRDIwNERjNThkQWI2NDU2OTMwRDUwIn0",
+            "payload": "eyJkb21haW4iOiJ3ZWJnbC1icmlkZ2UudmVyY2VsLmFwcCJ9",
+            "signature": "MHgzMjUzMDdiYjlhMzdiMDBjOTdhYjlkMWZlZmE1NDI4MzhlNWQxMjljZmI1YTlkMjliYTE4MThjNTAwMDY1ZWI1MTg1NjZmZmY0OTQyMDVjOGEzNDc3YzQzZTBkMzU2MjE2MTIxZDljODdjMGZlZTkxYjk1MTg1MWY3YjBiZWE2YTFi"
+        },
+        "frame": {
+            "version": "1",
+            "name": "Example Frame",
+            "iconUrl": "https://i.ibb.co/bgPWqJqr/Untitled-design-62.png",
+            "homeUrl": "https://webgl-bridge.vercel.app",
+            "imageUrl": "https://i.ibb.co/bgPWqJqr/Untitled-design-62.png",
+            "buttonTitle": "Check this out",
+            "splashImageUrl": "https://i.ibb.co/bgPWqJqr/Untitled-design-62.png",
+            "splashBackgroundColor": "#eeccff",
+            "webhookUrl": "https://webgl-bridge.vercel.app/api/webhook"
+        }
+    }
