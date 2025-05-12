@@ -1,50 +1,63 @@
 <!DOCTYPE html>
 <html lang="en-us">
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Unity Web Player | Rykon Studios</title>
-    <script>
-        // Setup listener for postMessage from Warpcast SDK
-        function SetupMessageListener() {
-            window.addEventListener("message", function (event) {
-                const username = event?.data?.untrustedData?.cast?.author?.username;
-                if (username && typeof unityInstance !== 'undefined') {
-                    unityInstance.SendMessage("FarcasterBridge", "OnFarcasterUsername", username);
-                }
-            });
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #231F20;
+            overflow: hidden;
+            text-align: center;
         }
+
+        canvas {
+            width: 432px;
+            height: 900px;
+            background: #231F20;
+        }
+
+        @media (max-width: 500px) {
+            canvas {
+                width: 100% !important;
+                height: 100% !important;
+                position: fixed;
+            }
+        }
+    </style>
+    <script>
+    function SetupMessageListener() {
+      window.addEventListener("message", function (event) {
+        if (event?.data?.type === "FARCASTER_USER_INFO") {
+          const username = event.data.payload?.username;
+          if (username && typeof unityInstance !== "undefined") {
+            unityInstance.SendMessage("FarcasterBridge", "OnFarcasterUsername", username);
+          }
+        }
+      });
+    }
     </script>
 </head>
-<body style="text-align: center; padding: 0; border: 0; margin: 0;">
-    <canvas id="unity-canvas" width=432 height=900 tabindex="-1" style="width: 432px; height: 900px; background: #231F20"></canvas>
+<body>
+    <canvas id="unity-canvas" width="432" height="900" tabindex="-1"></canvas>
     <script src="Build/BridgeWebgl.loader.js"></script>
     <script>
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            var meta = document.createElement('meta');
-            meta.name = 'viewport';
-            meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-            document.getElementsByTagName('head')[0].appendChild(meta);
-
-            var canvas = document.querySelector("#unity-canvas");
-            canvas.style.width = "100%";
-            canvas.style.height = "100%";
-            canvas.style.position = "fixed";
-            document.body.style.textAlign = "left";
-        }
-
-        createUnityInstance(document.querySelector("#unity-canvas"), {
-            dataUrl: "Build/BridgeWebgl.data",
-            frameworkUrl: "Build/BridgeWebgl.framework.js",
-            codeUrl: "Build/BridgeWebgl.wasm",
-            streamingAssetsUrl: "StreamingAssets",
-            companyName: "WebGl Bridge",
-            productName: "Rykon Studios",
-            productVersion: "1.0",
-        }).then((instance) => {
-            window.unityInstance = instance;
-            SetupMessageListener(); // Call listener once Unity is ready
-        });
+    createUnityInstance(document.querySelector("#unity-canvas"), {
+      dataUrl: "Build/BridgeWebgl.data",
+      frameworkUrl: "Build/BridgeWebgl.framework.js",
+      codeUrl: "Build/BridgeWebgl.wasm",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "WebGl Bridge",
+      productName: "Rykon Studios",
+      productVersion: "1.0",
+    }).then((instance) => {
+      window.unityInstance = instance;
+      SetupMessageListener();
+    });
     </script>
 </body>
 </html>
