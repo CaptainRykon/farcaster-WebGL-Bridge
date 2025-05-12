@@ -1,48 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import sdk from "@farcaster/frame-sdk";
-import WalletConnector from "./wallet-connector";
 
 export default function App() {
-    const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-    const [farcasterUserContext, setFarcasterUserContext] = useState<any>();
-    const [gameLoaded, setGameLoaded] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    useEffect(() => {
-        const load = async () => {
-            const context = await sdk.context;
-            setFarcasterUserContext(context);
-            sdk.actions.ready();
+  useEffect(() => {
+    const loadContext = async () => {
+      try {
+        const context = await sdk.context;
+        sdk.actions.ready();
+
+        const user = context.user || {};
+        const userInfo = {
+          username: user.username || "",
+          pfpUrl: user.pfpUrl || "",
         };
 
-        if (sdk && !isSDKLoaded) {
-            setIsSDKLoaded(true);
-            load();
+        const iframe = iframeRef.current;
+        if (iframe && iframe.contentWindow) {
+          iframe.onload = () => {
+            iframe.contentWindow?.postMessage(
+              { type: "FARCASTER_USER_INFO", payload: userInfo },
+              "*"
+            );
+          };
         }
+      } catch (error) {
+        console.error("Error loading Farcaster context:", error);
+      }
+    };
 
-        // Simulate game loading delay (or you can use actual onLoad from iframe if needed)
-        const timeout = setTimeout(() => {
-            setGameLoaded(true);
-        }, 1000);
+    loadContext();
+  }, []);
 
-        return () => clearTimeout(timeout);
-    }, [isSDKLoaded]);
-
-    return (
-        <div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
-            {gameLoaded ? (
-                <iframe
-                    src="/BridgeWebgl/index.html"
-                    style={{ width: "100%", height: "100%", border: "none" }}
-                    allowFullScreen
-                ></iframe>
-            ) : (
-                <div style={{ padding: "2rem", textAlign: "center" }}>
-                    <p>Loading...</p>
-                    <WalletConnector />
-                </div>
-            )}
-        </div>
-    );
+  return (
+    <div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
+      <iframe
+        ref={iframeRef}
+        src="/BridgeWebgl/index.html"
+        style={{ width: "100%", height: "100%", border: "none" }}
+        allowFullScreen
+      ></iframe>
+    </div>
+  );
 }
