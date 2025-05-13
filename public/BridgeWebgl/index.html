@@ -5,7 +5,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Unity Web Player | Rykon Studios</title>
 
-    <!-- Mobile Viewport -->
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
     <style>
@@ -95,17 +94,32 @@
         }).then((instance) => {
             window.unityInstance = instance;
 
-            // Hide UI overlays once game is loaded
             document.querySelector(".overlay").style.display = "none";
             document.querySelector(".loading-text").style.display = "none";
 
-            // Listen for Farcaster postMessage
+            // ✅ Receive Farcaster info from React
             window.addEventListener("message", function (event) {
-                const username = event?.data?.untrustedData?.cast?.author?.username;
-                if (username && typeof unityInstance !== 'undefined') {
-                    unityInstance.SendMessage("FarcasterBridge", "OnFarcasterUsername", username);
+                const data = event.data;
+
+                if (data?.type === "FARCASTER_USER_INFO") {
+                    const { username, pfpUrl } = data.payload;
+                    if (username) {
+                        instance.SendMessage("FarcasterBridge", "SetFarcasterUsername", username);
+                    }
+                    if (pfpUrl) {
+                        instance.SendMessage("FarcasterBridge", "SetPfpUrl", pfpUrl);
+                    }
                 }
             });
+
+            // ✅ Define functions to call React via postMessage
+            window.UnityShareGame = function () {
+                window.parent.postMessage({ type: "frame-action", action: "share-game" }, "*");
+            };
+
+            window.UnityShareScore = function (scoreText) {
+                window.parent.postMessage({ type: "frame-action", action: "share-score", message: scoreText }, "*");
+            };
         });
     </script>
 </body>
