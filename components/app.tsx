@@ -9,7 +9,7 @@ export default function App() {
     useEffect(() => {
         const initBridge = async () => {
             try {
-                await sdk.actions.ready(); // Ensure SDK is ready
+                await sdk.actions.ready();
                 const context = await sdk.context;
 
                 const user = context?.user || {};
@@ -28,23 +28,22 @@ export default function App() {
                             },
                             "*"
                         );
-                        console.log("Sent user info to Unity:", userInfo);
+                        console.log("✅ Sent user info to Unity:", userInfo);
                     }
                 };
 
                 const iframe = iframeRef.current;
                 if (iframe) {
-                    if (iframe.contentWindow?.document.readyState === "complete") {
+                    if (iframe.contentWindow?.document?.readyState === "complete") {
                         postUserInfo();
                     } else {
                         iframe.addEventListener("load", postUserInfo);
                     }
                 }
 
-                // Listen for messages FROM Unity WebGL
+                // 🔥 Listen for Unity events
                 window.addEventListener("message", (event) => {
                     const { type, action, message } = event.data || {};
-
                     if (type !== "frame-action") return;
 
                     switch (action) {
@@ -55,17 +54,19 @@ export default function App() {
                             break;
 
                         case "share-score":
+                            const score = Number(message) || 0;
+                            console.log("📣 Sharing score:", score);
                             sdk.actions.openUrl(
-                                `https://warpcast.com/~/compose?text=🏆 I scored ${message} points! Can you beat me?&embeds[]=https://webgl-bridge.vercel.app`
+                                `https://warpcast.com/~/compose?text=🏆 I scored ${score} points! Can you beat me?&embeds[]=https://webgl-bridge.vercel.app`
                             );
                             break;
 
                         default:
-                            console.warn("Unknown action from Unity:", action);
+                            console.warn("⚠️ Unknown action from Unity:", action);
                     }
                 });
             } catch (error) {
-                console.error("Error setting up Farcaster bridge:", error);
+                console.error("❌ Error setting up Farcaster bridge:", error);
             }
         };
 
