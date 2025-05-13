@@ -50,13 +50,13 @@ export default function App() {
                     switch (action) {
                         case "share-game":
                             sdk.actions.openUrl(
-                                `https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=https://yourgame.vercel.app`
+                                `https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=https://webgl-bridge.vercel.app`
                             );
                             break;
 
                         case "share-score":
                             sdk.actions.openUrl(
-                                `https://warpcast.com/~/compose?text=🏆 I scored ${message} points! Can you beat me?&embeds[]=https://yourgame.vercel.app`
+                                `https://warpcast.com/~/compose?text=🏆 I scored ${message} points! Can you beat me?&embeds[]=https://webgl-bridge.vercel.app`
                             );
                             break;
 
