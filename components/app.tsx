@@ -1,86 +1,72 @@
-﻿"use client";
+﻿'use client';
 
-import { useEffect, useRef } from "react";
-import sdk from "@farcaster/frame-sdk";
+import { useEffect } from 'react';
+import { createFrames } from 'frames.js/next';
+import { farcasterHubContext, getFrameMetadata } from '@farcaster/frame-sdk';
 
-export default function App() {
-    const iframeRef = useRef<HTMLIFrameElement>(null);
+const frames = createFrames({
+    basePath: '/frames',
+    hub: farcasterHubContext,
+});
 
+const gameUrl = 'https://webgl-bridge.vercel.app'; // Update to your real game URL
+
+export const metadata = {
+    title: 'BaseDrop',
+    description: 'Farcaster Frame WebGL Game',
+    openGraph: {
+        title: 'BaseDrop',
+        images: [`${gameUrl}/cover.png`],
+    },
+    other: {
+        ...getFrameMetadata({
+            buttons: ['Play'],
+            image: `${gameUrl}/cover.png`,
+            postUrl: `${gameUrl}/frames/start`,
+        }),
+    },
+};
+
+export default function Page() {
     useEffect(() => {
-        const initBridge = async () => {
-            try {
-                await sdk.actions.ready();
-                const context = await sdk.context;
+        const handleMessage = (event: MessageEvent) => {
+            const { type, action, message } = event.data || {};
 
-                const user = context?.user || {};
-                const userInfo = {
-                    username: user.username || "Guest",
-                    pfpUrl: user.pfpUrl || "",
-                };
+            if (type !== 'frame-action') return;
 
-                const postUserInfo = () => {
-                    const iframe = iframeRef.current;
-                    if (iframe?.contentWindow) {
-                        iframe.contentWindow.postMessage(
-                            {
-                                type: "FARCASTER_USER_INFO",
-                                payload: userInfo,
-                            },
-                            "*"
-                        );
-                        console.log("✅ Sent user info to Unity:", userInfo);
-                    }
-                };
+            console.log('⚡ Frame Action Received:', action, message);
 
-                const iframe = iframeRef.current;
-                if (iframe) {
-                    if (iframe.contentWindow?.document?.readyState === "complete") {
-                        postUserInfo();
-                    } else {
-                        iframe.addEventListener("load", postUserInfo);
-                    }
-                }
+            switch (action) {
+                case 'share-game':
+                    window.open(
+                        `https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=${gameUrl}`,
+                        '_blank'
+                    );
+                    break;
 
-                // 🔥 Listen for Unity events
-                window.addEventListener("message", (event) => {
-                    const { type, action, message } = event.data || {};
-                    if (type !== "frame-action") return;
+                case 'share-score':
+                    window.open(
+                        `https://warpcast.com/~/compose?text=🏆 I scored ${message} points in BaseDrop! Can you beat me?&embeds[]=${gameUrl}`,
+                        '_blank'
+                    );
+                    break;
 
-                    switch (action) {
-                        case "share-game":
-                            sdk.actions.openUrl(
-                                `https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=https://webgl-bridge.vercel.app`
-                            );
-                            break;
-
-                        case "share-score":
-                            const score = Number(message) || 0;
-                            console.log("📣 Sharing score:", score);
-                            sdk.actions.openUrl(
-                                `https://warpcast.com/~/compose?text=🏆 I scored ${score} points! Can you beat me?&embeds[]=https://webgl-bridge.vercel.app`
-                            );
-                            break;
-
-                        default:
-                            console.warn("⚠️ Unknown action from Unity:", action);
-                    }
-                });
-            } catch (error) {
-                console.error("❌ Error setting up Farcaster bridge:", error);
+                default:
+                    console.warn('Unknown action received from Unity:', action);
             }
         };
 
-        initBridge();
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
     }, []);
 
     return (
-        <div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
-            <iframe
-                ref={iframeRef}
-                src="/BridgeWebgl/index.html"
-                style={{ width: "100%", height: "100%", border: "none" }}
-                allowFullScreen
-            ></iframe>
-        </div>
+        <iframe
+            src="/Build/index.html"
+            width="100%"
+            height="600"
+            allow="fullscreen"
+            className="border rounded-xl shadow-md"
+        />
     );
 }
