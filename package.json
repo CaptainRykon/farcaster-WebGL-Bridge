@@ -16,6 +16,7 @@
     "@tanstack/react-query": "^5.68.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "frames.js": "^0.22.0",
     "lucide-react": "^0.482.0",
     "next": "15.2.3",
     "react": "^19.0.0",
@@ -33,5 +34,5 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@10.10.0"
+  "packageManager": "pnpm@10.11.0"
 }

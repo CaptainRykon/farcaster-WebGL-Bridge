@@ -1,16 +1,17 @@
 ﻿'use client';
 
 import { useEffect } from 'react';
-import { createFrames } from 'frames.js/next';
+import { createFrames } from 'frames.js';
 import { farcasterHubContext, getFrameMetadata } from '@farcaster/frame-sdk';
+
+const gameUrl = 'https://webgl-bridge.vercel.app'; // Replace with your actual domain
 
 const frames = createFrames({
     basePath: '/frames',
     hub: farcasterHubContext,
 });
 
-const gameUrl = 'https://webgl-bridge.vercel.app'; // Update to your real game URL
-
+// Frame metadata for Warpcast preview
 export const metadata = {
     title: 'BaseDrop',
     description: 'Farcaster Frame WebGL Game',
@@ -36,23 +37,18 @@ export default function Page() {
 
             console.log('⚡ Frame Action Received:', action, message);
 
-            switch (action) {
-                case 'share-game':
-                    window.open(
-                        `https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=${gameUrl}`,
-                        '_blank'
-                    );
-                    break;
-
-                case 'share-score':
-                    window.open(
-                        `https://warpcast.com/~/compose?text=🏆 I scored ${message} points in BaseDrop! Can you beat me?&embeds[]=${gameUrl}`,
-                        '_blank'
-                    );
-                    break;
-
-                default:
-                    console.warn('Unknown action received from Unity:', action);
+            if (action === 'share-game') {
+                window.open(
+                    `https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=${gameUrl}`,
+                    '_blank'
+                );
+            } else if (action === 'share-score') {
+                window.open(
+                    `https://warpcast.com/~/compose?text=🏆 I scored ${message} points in BaseDrop! Can you beat me?&embeds[]=${gameUrl}`,
+                    '_blank'
+                );
+            } else {
+                console.warn('Unknown frame action received:', action);
             }
         };
 
@@ -62,11 +58,11 @@ export default function Page() {
 
     return (
         <iframe
-            src="/Build/index.html"
+            src="/BridgeWebgl/index.html"
             width="100%"
-            height="600"
+            height="1000"
             allow="fullscreen"
-            className="border rounded-xl shadow-md"
+            className="border rounded-xl shadow-xl"
         />
     );
 }
