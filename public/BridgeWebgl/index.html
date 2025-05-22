@@ -2,10 +2,10 @@
 <html lang="en-us">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Unity Web Player | Rykon Studios</title>
 
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
     <style>
         html, body {
@@ -79,7 +79,7 @@
     <!-- Loading Message -->
     <div class="loading-text">Loading Game...</div>
 
-    <!-- Unity Loader -->
+    <!-- Unity Loader Script -->
     <script src="Build/BridgeWebgl.loader.js"></script>
 
     <script>
@@ -94,10 +94,11 @@
         }).then((instance) => {
             window.unityInstance = instance;
 
+            // Hide loading UI after Unity loads
             document.querySelector(".overlay").style.display = "none";
             document.querySelector(".loading-text").style.display = "none";
 
-            // ✅ Receive Farcaster info from React
+            // ✅ Receive Farcaster info from React (parent frame)
             window.addEventListener("message", function (event) {
                 const data = event.data;
 
@@ -112,7 +113,7 @@
                 }
             });
 
-            // ✅ Define functions to call React via postMessage
+            // ✅ Functions for Unity to call React
             window.UnityShareGame = function () {
                 window.parent.postMessage({ type: "frame-action", action: "share-game" }, "*");
             };
