@@ -3,17 +3,14 @@
 <head>
     <meta charset="utf-8" />
     <title>Unity Web Player | Rykon Studios</title>
-
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
     <style>
         html, body {
             margin: 0;
             padding: 0;
             height: 100%;
             overflow: hidden;
-            background: #000000;
+            background: #000;
             font-family: Arial, sans-serif;
             color: white;
             text-align: center;
@@ -22,12 +19,8 @@
         #unity-canvas {
             width: 100%;
             height: 100%;
+            background: #000;
             display: block;
-            background: #000000;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 0;
         }
 
         .overlay {
@@ -35,9 +28,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            text-align: center;
-            pointer-events: none;
             z-index: 10;
+            pointer-events: none;
         }
 
         .game-title {
@@ -60,26 +52,19 @@
             transform: translateX(-50%);
             font-size: 18px;
             opacity: 0.8;
-            pointer-events: none;
             z-index: 10;
         }
     </style>
 </head>
 
 <body>
-    <!-- Overlay Title and Studio Name -->
     <div class="overlay">
         <div class="game-title">Rykon Game</div>
         <div class="company-name">by Rykon Studios</div>
     </div>
-
-    <!-- Unity Canvas -->
     <canvas id="unity-canvas" tabindex="-1"></canvas>
-
-    <!-- Loading Message -->
     <div class="loading-text">Loading Game...</div>
 
-    <!-- Unity Loader Script -->
     <script src="Build/BridgeWebgl.loader.js"></script>
 
     <script>
@@ -93,34 +78,44 @@
             productVersion: "1.0",
         }).then((instance) => {
             window.unityInstance = instance;
+            console.log("✅ Unity WebGL instance created");
 
-            // Hide loading UI after Unity loads
+            // Hide loading text
             document.querySelector(".overlay").style.display = "none";
             document.querySelector(".loading-text").style.display = "none";
 
-            // ✅ Receive Farcaster info from React (parent frame)
-            window.addEventListener("message", function (event) {
+            // ✅ Listen for Farcaster user info from React or parent
+            window.addEventListener("message", (event) => {
                 const data = event.data;
-
                 if (data?.type === "FARCASTER_USER_INFO") {
                     const { username, pfpUrl } = data.payload;
+
+                    console.log("📩 Received user info from parent:", data.payload);
+
                     if (username) {
+                        console.log("➡️ Sending username to Unity:", username);
                         instance.SendMessage("FarcasterBridge", "SetFarcasterUsername", username);
                     }
+
                     if (pfpUrl) {
+                        console.log("➡️ Sending PFP URL to Unity:", pfpUrl);
                         instance.SendMessage("FarcasterBridge", "SetPfpUrl", pfpUrl);
                     }
                 }
             });
 
-            // ✅ Functions for Unity to call React
+            // ✅ Allow Unity to send messages to parent (React etc.)
             window.UnityShareGame = function () {
+                console.log("⬆️ Unity requested share-game action");
                 window.parent.postMessage({ type: "frame-action", action: "share-game" }, "*");
             };
 
             window.UnityShareScore = function (scoreText) {
+                console.log("⬆️ Unity requested share-score:", scoreText);
                 window.parent.postMessage({ type: "frame-action", action: "share-score", message: scoreText }, "*");
             };
+        }).catch((err) => {
+            console.error("❌ Failed to load Unity:", err);
         });
     </script>
 </body>
