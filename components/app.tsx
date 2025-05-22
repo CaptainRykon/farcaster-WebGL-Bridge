@@ -5,6 +5,10 @@ import sdk from "@farcaster/frame-sdk";
 
 export default function App() {
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const userInfoRef = useRef({
+        username: "Guest",
+        pfpUrl: "",
+    });
 
     useEffect(() => {
         const initBridge = async () => {
@@ -13,33 +17,35 @@ export default function App() {
                 const context = await sdk.context;
                 const user = context?.user || {};
 
-                const userInfo = {
+                // Save user info
+                userInfoRef.current = {
                     username: user.username || "Guest",
                     pfpUrl: user.pfpUrl || "",
                 };
 
-                const postUserInfo = () => {
+                const postUserInfoToUnity = () => {
                     const iframe = iframeRef.current;
                     if (iframe?.contentWindow) {
                         iframe.contentWindow.postMessage(
                             {
                                 type: "FARCASTER_USER_INFO",
-                                payload: userInfo,
+                                payload: userInfoRef.current,
                             },
                             "*"
                         );
-                        console.log("✅ Sent user info to Unity:", userInfo);
+                        console.log("✅ Sent user info to Unity:", userInfoRef.current);
                     }
                 };
 
+                // Send info when iframe loads
                 const iframe = iframeRef.current;
                 if (iframe) {
-                    iframe.addEventListener("load", postUserInfo);
+                    iframe.addEventListener("load", postUserInfoToUnity);
                 }
 
+                // Listen for Unity requests (button press in Unity)
                 window.addEventListener("message", (event) => {
                     const { type, action, message } = event.data || {};
-
                     if (type !== "frame-action") return;
 
                     switch (action) {
@@ -49,6 +55,11 @@ export default function App() {
 
                         case "share-score":
                             sdk.actions.openUrl(`https://warpcast.com/~/compose?text=🏆 I scored ${message} points! Can you beat me?&embeds[]=https://webgl-bridge.vercel.app`);
+                            break;
+
+                        case "get-user-context":
+                            console.log("📨 Unity requested Farcaster user context");
+                            postUserInfoToUnity();
                             break;
 
                         default:
