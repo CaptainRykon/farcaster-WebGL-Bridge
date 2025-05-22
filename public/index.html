@@ -53,9 +53,13 @@
 
     <script src="Build/BridgeWebgl.loader.js"></script>
     <script>
-        // Prevent Unity's IndexedDB caching for sandboxed iframe
+        // Disable IndexedDB caching for iframe security
         window.caches = null;
 
+        // Store Unity instance globally
+        let unityInstance = null;
+
+        // Load Unity WebGL build
         createUnityInstance(document.querySelector("#unity-canvas"), {
             dataUrl: "Build/BridgeWebgl.data",
             frameworkUrl: "Build/BridgeWebgl.framework.js",
@@ -67,34 +71,47 @@
             disableContextMenu: true,
             cacheControl: () => "no-store",
         }).then((instance) => {
+            unityInstance = instance;
             window.unityInstance = instance;
+
             document.querySelector(".overlay").style.display = "none";
             document.querySelector(".loading-text").style.display = "none";
 
-            // 👂 Listen for Farcaster user info
+            console.log("✅ Unity WebGL initialized");
+
+            // 🔄 Unity → Parent (for sharing actions)
+            window.UnityShareGame = () => {
+                window.parent.postMessage({ type: "frame-action", action: "share-game" }, "*");
+                console.log("📤 Unity requested share-game");
+            };
+
+            window.UnityShareScore = (scoreText) => {
+                window.parent.postMessage({ type: "frame-action", action: "share-score", message: scoreText }, "*");
+                console.log("📤 Unity requested share-score:", scoreText);
+            };
+
+            // 📥 Parent → Unity (receives Farcaster user info)
             window.addEventListener("message", (event) => {
                 const data = event.data;
                 if (data?.type === "FARCASTER_USER_INFO") {
                     const { username, pfpUrl } = data.payload || {};
 
                     if (username) {
-                        console.log("👤 Username received:", username);
+                        console.log("👤 Username received from parent:", username);
                         instance.SendMessage("FarcasterBridge", "SetFarcasterUsername", username);
                     }
+
                     if (pfpUrl) {
-                        console.log("🖼️ PFP URL received:", pfpUrl);
+                        console.log("🖼️ PFP URL received from parent:", pfpUrl);
                         instance.SendMessage("FarcasterBridge", "SetPfpUrl", pfpUrl);
                     }
                 }
             });
 
-            // 🌐 Unity-to-parent communication
-            window.UnityShareGame = () => {
-                window.parent.postMessage({ type: "frame-action", action: "share-game" }, "*");
-            };
-
-            window.UnityShareScore = (scoreText) => {
-                window.parent.postMessage({ type: "frame-action", action: "share-score", message: scoreText }, "*");
+            // 🔁 Unity → JS → Parent request for Farcaster user
+            window.RequestFarcasterUserData = function () {
+                console.log("📨 Unity requested Farcaster user context from parent");
+                window.parent.postMessage({ type: "frame-action", action: "get-user-context" }, "*");
             };
         }).catch((err) => {
             console.error("❌ Unity load failed:", err);
