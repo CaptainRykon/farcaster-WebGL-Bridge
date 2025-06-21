@@ -8,6 +8,7 @@ export default function App() {
     const userInfoRef = useRef({
         username: "Guest",
         pfpUrl: "",
+        fid: "", // Added to send in notifications
     });
 
     useEffect(() => {
@@ -17,10 +18,10 @@ export default function App() {
                 const context = await sdk.context;
                 const user = context?.user || {};
 
-                // Save user info
                 userInfoRef.current = {
                     username: user.username || "Guest",
                     pfpUrl: user.pfpUrl || "",
+                    fid: user.fid?.toString() || "", // Save FID for later use
                 };
 
                 const postUserInfoToUnity = () => {
@@ -37,29 +38,50 @@ export default function App() {
                     }
                 };
 
-                // Send info when iframe loads
                 const iframe = iframeRef.current;
                 if (iframe) {
                     iframe.addEventListener("load", postUserInfoToUnity);
                 }
 
-                // Listen for Unity requests (button press in Unity)
-                window.addEventListener("message", (event) => {
+                window.addEventListener("message", async (event) => {
                     const { type, action, message } = event.data || {};
                     if (type !== "frame-action") return;
 
                     switch (action) {
                         case "share-game":
-                            sdk.actions.openUrl(`https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=https://webgl-bridge.vercel.app`);
+                            sdk.actions.openUrl(
+                                `https://warpcast.com/~/compose?text=🎮 Try this awesome game!&embeds[]=https://webgl-bridge.vercel.app`
+                            );
                             break;
 
                         case "share-score":
-                            sdk.actions.openUrl(`https://warpcast.com/~/compose?text=🏆 I scored ${message} points! Can you beat me?&embeds[]=https://webgl-bridge.vercel.app`);
+                            sdk.actions.openUrl(
+                                `https://warpcast.com/~/compose?text=🏆 I scored ${message} points! Can you beat me?&embeds[]=https://webgl-bridge.vercel.app`
+                            );
                             break;
 
                         case "get-user-context":
                             console.log("📨 Unity requested Farcaster user context");
                             postUserInfoToUnity();
+                            break;
+
+                        case "send-notification":
+                            console.log("📬 Notification requested from Unity with message:", message);
+                            if (userInfoRef.current.fid) {
+                                await fetch("/api/send-notification", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                        fid: userInfoRef.current.fid,
+                                        title: "🎉 You're on fire!",
+                                        body: message,
+                                    }),
+                                });
+                            } else {
+                                console.warn("❌ FID not available for sending notification.");
+                            }
                             break;
 
                         default:
