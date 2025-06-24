@@ -8,7 +8,7 @@ export default function App() {
     const userInfoRef = useRef({
         username: "Guest",
         pfpUrl: "",
-        fid: "", // Farcaster ID
+        fid: "",
     });
 
     useEffect(() => {
@@ -21,30 +21,42 @@ export default function App() {
                 userInfoRef.current = {
                     username: user.username || "Guest",
                     pfpUrl: user.pfpUrl || "",
-                    fid: user.fid?.toString() || "", // Save FID as string
+                    fid: user.fid?.toString() || "",
                 };
 
                 const postUserInfoToUnity = () => {
                     const iframe = iframeRef.current;
-                    if (iframe?.contentWindow) {
-                        iframe.contentWindow.postMessage(
-                            {
-                                type: "FARCASTER_USER_INFO",
-                                payload: userInfoRef.current,
-                            },
-                            "*"
-                        );
-                        console.log("✅ Sent user info to Unity:", userInfoRef.current);
-                    }
+                    if (!iframe?.contentWindow) return;
+
+                    const { username, pfpUrl, fid } = userInfoRef.current;
+
+                    // Send user info
+                    iframe.contentWindow.postMessage(
+                        {
+                            type: "FARCASTER_USER_INFO",
+                            payload: { username, pfpUrl },
+                        },
+                        "*"
+                    );
+
+                    // Send FID separately to ensure it's available for notifications
+                    iframe.contentWindow.postMessage(
+                        {
+                            type: "UNITY_METHOD_CALL",
+                            method: "SetFarcasterFID",
+                            args: [fid],
+                        },
+                        "*"
+                    );
+
+                    console.log("✅ Sent user info & FID to Unity:", userInfoRef.current);
                 };
 
                 const iframe = iframeRef.current;
-                if (iframe) {
-                    iframe.addEventListener("load", postUserInfoToUnity);
-                }
+                if (iframe) iframe.addEventListener("load", postUserInfoToUnity);
 
                 window.addEventListener("message", async (event) => {
-                    const { type, action, message, fid } = event.data || {};
+                    const { type, action, message } = event.data || {};
                     if (type !== "frame-action") return;
 
                     switch (action) {
@@ -66,24 +78,19 @@ export default function App() {
                             break;
 
                         case "send-notification":
-                            console.log("📬 Notification request from Unity:", message);
+                            console.log("📬 Notification requested:", message);
                             if (userInfoRef.current.fid) {
-                                const res = await fetch("/api/send-notification", {
+                                await fetch("/api/send-notification", {
                                     method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
+                                    headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({
                                         fid: userInfoRef.current.fid,
-                                        title: "🔥 You've got a new update!",
+                                        title: "🎯 Farcaster Ping!",
                                         body: message,
                                     }),
                                 });
-
-                                const result = await res.json();
-                                console.log("✅ Notification sent:", result);
                             } else {
-                                console.warn("❌ Cannot send notification — FID is missing.");
+                                console.warn("❌ Cannot send notification, FID missing");
                             }
                             break;
 

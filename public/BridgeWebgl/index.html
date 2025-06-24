@@ -53,13 +53,11 @@
 
     <script src="Build/BridgeWebgl.loader.js"></script>
     <script>
-        // Disable IndexedDB caching for iframe security
+        // Disable IndexedDB caching
         window.caches = null;
 
-        // Store Unity instance globally
         let unityInstance = null;
 
-        // Load Unity WebGL build
         createUnityInstance(document.querySelector("#unity-canvas"), {
             dataUrl: "Build/BridgeWebgl.data",
             frameworkUrl: "Build/BridgeWebgl.framework.js",
@@ -79,7 +77,7 @@
 
             console.log("✅ Unity WebGL initialized");
 
-            // 🔄 Unity → Parent (for sharing actions)
+            // 🔁 Unity → Parent (share/game/score)
             window.UnityShareGame = () => {
                 window.parent.postMessage({ type: "frame-action", action: "share-game" }, "*");
                 console.log("📤 Unity requested share-game");
@@ -90,9 +88,16 @@
                 console.log("📤 Unity requested share-score:", scoreText);
             };
 
-            // 📥 Parent → Unity (receives Farcaster user info)
+            // 📩 Unity requests Farcaster user context
+            window.RequestFarcasterUserData = function () {
+                console.log("📨 Unity requested Farcaster user context from parent");
+                window.parent.postMessage({ type: "frame-action", action: "get-user-context" }, "*");
+            };
+
+            // 📥 Parent → Unity
             window.addEventListener("message", (event) => {
                 const data = event.data;
+
                 if (data?.type === "FARCASTER_USER_INFO") {
                     const { username, pfpUrl } = data.payload || {};
 
@@ -106,13 +111,16 @@
                         instance.SendMessage("FarcasterBridge", "SetPfpUrl", pfpUrl);
                     }
                 }
-            });
 
-            // 🔁 Unity → JS → Parent request for Farcaster user
-            window.RequestFarcasterUserData = function () {
-                console.log("📨 Unity requested Farcaster user context from parent");
-                window.parent.postMessage({ type: "frame-action", action: "get-user-context" }, "*");
-            };
+                // ✅ Handle FID from parent → Unity
+                if (data?.type === "UNITY_METHOD_CALL" && data.method === "SetFarcasterFID") {
+                    const fid = data.args?.[0];
+                    if (fid) {
+                        console.log("🆔 FID received from parent:", fid);
+                        instance.SendMessage("FarcasterBridge", "SetFarcasterFID", fid);
+                    }
+                }
+            });
         }).catch((err) => {
             console.error("❌ Unity load failed:", err);
         });
