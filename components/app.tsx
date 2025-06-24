@@ -8,7 +8,7 @@ export default function App() {
     const userInfoRef = useRef({
         username: "Guest",
         pfpUrl: "",
-        fid: "", // Added to send in notifications
+        fid: "", // Farcaster ID
     });
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export default function App() {
                 userInfoRef.current = {
                     username: user.username || "Guest",
                     pfpUrl: user.pfpUrl || "",
-                    fid: user.fid?.toString() || "", // Save FID for later use
+                    fid: user.fid?.toString() || "", // Save FID as string
                 };
 
                 const postUserInfoToUnity = () => {
@@ -44,7 +44,7 @@ export default function App() {
                 }
 
                 window.addEventListener("message", async (event) => {
-                    const { type, action, message } = event.data || {};
+                    const { type, action, message, fid } = event.data || {};
                     if (type !== "frame-action") return;
 
                     switch (action) {
@@ -66,21 +66,24 @@ export default function App() {
                             break;
 
                         case "send-notification":
-                            console.log("📬 Notification requested from Unity with message:", message);
+                            console.log("📬 Notification request from Unity:", message);
                             if (userInfoRef.current.fid) {
-                                await fetch("/api/send-notification", {
+                                const res = await fetch("/api/send-notification", {
                                     method: "POST",
                                     headers: {
                                         "Content-Type": "application/json",
                                     },
                                     body: JSON.stringify({
                                         fid: userInfoRef.current.fid,
-                                        title: "🎉 You're on fire!",
+                                        title: "🔥 You've got a new update!",
                                         body: message,
                                     }),
                                 });
+
+                                const result = await res.json();
+                                console.log("✅ Notification sent:", result);
                             } else {
-                                console.warn("❌ FID not available for sending notification.");
+                                console.warn("❌ Cannot send notification — FID is missing.");
                             }
                             break;
 
