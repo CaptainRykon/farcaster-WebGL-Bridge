@@ -13,6 +13,6 @@
         "buttonTitle": "Check this out",
         "splashImageUrl": "https://i.ibb.co/bgPWqJqr/Untitled-design-62.png",
         "splashBackgroundColor": "#eeccff",
-        "webhookUrl": "https://webgl-bridge.vercel.app/api/webhook"
+        "webhookUrl": "https://api.neynar.com/f/app/efa00e1c-7ad1-4976-b509-cf430e73a885/event"
     }
 }
