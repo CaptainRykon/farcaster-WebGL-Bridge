@@ -1,30 +1,32 @@
-﻿// pages/api/send-notification.ts or app/api/send-notification/route.ts
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { fid, title, body, target_url } = await req.json();
+  const { title, body, target_url } = await req.json();
 
-  if (!fid) {
-    return NextResponse.json({ error: "Missing FID" }, { status: 400 });
+  // Minimal validation
+  if (!title || !body) {
+    return NextResponse.json({ error: "Missing title/body" }, { status: 400 });
   }
 
-  const response = await fetch("https://api.neynar.com/v2/notifications/send", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "API-Key": process.env.NEYNAR_API_KEY!, // Set in .env
-    },
-    body: JSON.stringify({
-      fid,
-      notification: {
-        title,
-        body,
-        target_url,
+  const res = await fetch(
+    "https://api.neynar.com/v2/farcaster/notifications/broadcast",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // 👈  Neynar expects the header name **exactly** as `api_key`
+        api_key: process.env.NEYNAR_API_KEY!
       },
-    }),
-  });
+      body: JSON.stringify({
+        notification: {
+          title,
+          body,
+          target_url: target_url ?? "https://webgl-bridge.vercel.app"
+        }
+      })
+    }
+  );
 
-  const result = await response.json();
-
-  return NextResponse.json(result);
+  const data = await res.json();
+  return NextResponse.json(data);
 }
