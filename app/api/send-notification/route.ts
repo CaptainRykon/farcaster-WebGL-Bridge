@@ -1,56 +1,30 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+﻿// pages/api/send-notification.ts or app/api/send-notification/route.ts
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { fid, message } = body;
+  const { fid, title, body, target_url } = await req.json();
 
-    if (!fid || !message) {
-      return NextResponse.json({ error: "Missing fid or message" }, { status: 400 });
-    }
-
-    // 🔎 Get token from Supabase
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("token")
-      .eq("fid", fid)
-      .single();
-
-    if (error || !data?.token) {
-      console.warn(`❌ No token found for fid ${fid}`);
-      return NextResponse.json({ error: "No token found" }, { status: 404 });
-    }
-
-    const token = data.token;
-
-    // 📤 Send notification
-    const fcRes = await fetch("https://api.farcaster.xyz/v2/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.FARCASTER_API_KEY}`,
-      },
-      body: JSON.stringify({
-        notification: {
-          title: "🎮 Farcaster Game",
-          body: message,
-          token,
-        },
-      }),
-    });
-
-    const result = await fcRes.json();
-
-    if (!fcRes.ok) {
-      console.error("❌ Farcaster notification failed:", result);
-      return NextResponse.json({ error: "Farcaster API error" }, { status: 500 });
-    }
-
-    console.log(`✅ Notification sent to fid ${fid}`);
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("❌ Send Notification error:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  if (!fid) {
+    return NextResponse.json({ error: "Missing FID" }, { status: 400 });
   }
+
+  const response = await fetch("https://api.neynar.com/v2/notifications/send", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "API-Key": process.env.NEYNAR_API_KEY!, // Set in .env
+    },
+    body: JSON.stringify({
+      fid,
+      notification: {
+        title,
+        body,
+        target_url,
+      },
+    }),
+  });
+
+  const result = await response.json();
+
+  return NextResponse.json(result);
 }
