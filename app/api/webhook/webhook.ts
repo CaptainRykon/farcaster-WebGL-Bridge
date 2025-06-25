@@ -1,26 +1,24 @@
-﻿// File: app/api/webhook/route.ts
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+
+// Replace with your Neynar API key
+const NEYNAR_API_KEY = "19AEA007-0425-4A90-A59E-AEBCAA63256B";
 
 export async function POST(req: NextRequest) {
+  const authHeader = req.headers.get("api_key");
+
+  if (authHeader !== NEYNAR_API_KEY) {
+    return NextResponse.json({ error: "Missing or invalid API key" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
+    console.log("✅ Webhook received:", body);
 
-    const header = decodeBase64Json(body.header);
-    const payload = decodeBase64Json(body.payload);
-
-    const fid = header?.fid;
-    const event = payload?.event;
-
-    if (event === "notifications_enabled") {
-      console.log(`✅ User ${fid} enabled notifications`);
-    }
+    // Your webhook logic here
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    return NextResponse.json({ error: "Webhook error" }, { status: 500 });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return NextResponse.json({ error: "Webhook failed" }, { status: 500 });
   }
-}
-
-function decodeBase64Json(str: string) {
-  return JSON.parse(Buffer.from(str, "base64").toString("utf-8"));
 }
